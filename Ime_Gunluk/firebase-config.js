@@ -4,7 +4,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCKK4tHmPTK7POmfkjL4MSoyml92HcbZiU",
+  apiKey: "00000",
   authDomain: "gunluk-fdff6.firebaseapp.com",
   projectId: "gunluk-fdff6",
   storageBucket: "gunluk-fdff6.firebasestorage.app",

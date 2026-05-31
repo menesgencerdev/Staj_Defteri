@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staj Portal - Toplantilar</title>
+    <link rel="stylesheet" href="style.css?v=20260425mobile1">
+    <script>
+        (() => {
+            const savedTheme = localStorage.getItem("theme");
+            const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.setAttribute("data-theme", savedTheme || (systemDark ? "dark" : "light"));
+        })();
+    </script>
+    <script>window.__APP_CHECK_SITE_KEY = window.__APP_CHECK_SITE_KEY || "";</script>
+</head>
+<body class="panel-page">
+    <div id="loading-screen"><div class="spinner"></div><h2 style="margin-top:20px;">Toplantilar yukleniyor...</h2></div>
+
+    <div class="top-bar">
+        <h2>Toplantilar</h2>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end;">
+            <button type="button" onclick="goBackToPanel()" class="btn-back" style="width:auto;">Panele Don</button>
+            <button type="button" data-theme-toggle onclick="toggleTheme()" class="theme-toggle-btn">Koyu Mod</button>
+            <span id="user-email" style="color:#cbd5e1;"></span>
+            <button type="button" onclick="handleLogout()" class="btn-danger">Cikis Yap</button>
+        </div>
+    </div>
+
+    <div class="main-container meetings-page">
+        <section id="meeting-create-section" class="section-card hidden">
+            <h2 style="margin-top:0; color:var(--primary);">Toplanti Olustur</h2>
+            <p class="muted-text">Sinif secin, toplantinin zamanini, linkini ve istenenleri yazin. Olusturunca ogrencilere bildirim gider.</p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; align-items:end;">
+                <label>
+                    <span class="muted-text">Sinif</span>
+                    <select id="meeting-class-select" class="input-field"></select>
+                </label>
+                <label>
+                    <span class="muted-text">Tarih ve saat</span>
+                    <input type="datetime-local" id="meeting-start" class="input-field">
+                </label>
+            </div>
+            <input type="text" id="meeting-title" class="input-field" placeholder="Baslik: Haftalik degerlendirme toplantisi">
+            <input type="url" id="meeting-url" class="input-field" placeholder="Meet / Zoom / Teams linki (opsiyonel, sonra eklenebilir)">
+            <textarea id="meeting-description" placeholder="Toplanti bilgisi: Bu saatte kamera acik olsun, haftalik notlar hazir bulunsun..." style="min-height:130px;"></textarea>
+            <button type="button" id="meeting-create-btn" onclick="createMeetingFromPage()" class="btn-main" style="margin-top:10px;">Toplantiyi Olustur</button>
+        </section>
+
+        <section class="section-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                <div>
+                    <h2 style="margin:0; color:var(--primary);">Yaklasan Toplantilar</h2>
+                    <p class="muted-text" style="margin-bottom:0;">Saat, link ve toplantida istenen bilgiler burada listelenir.</p>
+                </div>
+                <button type="button" onclick="loadMeetingsPage()" class="btn-back" style="width:auto;">Yenile</button>
+            </div>
+            <div id="meetings-page-list" style="margin-top:18px; display:grid; gap:14px;">Toplantilar yukleniyor...</div>
+        </section>
+    </div>
+
+    <style>
+        .meetings-page { max-width: 1180px; }
+        .meeting-card { border:1px solid var(--border); background:var(--card); border-radius:16px; padding:18px; box-shadow:var(--shadow); }
+        .meeting-card-today { border-color:var(--warning); box-shadow:0 12px 30px rgba(245,158,11,.16); }
+        .meeting-card-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+        .meeting-title { margin:0 0 8px 0; color:var(--text); }
+        .meeting-meta { color:var(--muted); font-size:.95rem; line-height:1.55; }
+        .meeting-desc { white-space:pre-wrap; line-height:1.55; margin:12px 0 0 0; }
+        .meeting-badge { display:inline-flex; align-items:center; border-radius:999px; padding:6px 10px; background:rgba(245,158,11,.14); color:#b45309; font-weight:700; font-size:.82rem; }
+        [data-theme="dark"] .meeting-badge { color:#fbbf24; }
+        @media (max-width: 720px) {
+            .top-bar { align-items:flex-start; gap:12px; }
+            .top-bar > div { width:100%; justify-content:flex-start !important; }
+            .main-container { width:94%; }
+        }
+    </style>
+
+    <script type="module" src="dist/toplantilar.bundle.js?v=20260430meetinglink1"></script>
+</body>
+</html>

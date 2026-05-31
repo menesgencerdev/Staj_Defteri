@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staj Portal - Kontrol Paneli</title>
+    <link rel="stylesheet" href="style.css?v=20260425version2">
+    <script>
+    (() => {
+        const savedTheme = localStorage.getItem("theme");
+        const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = savedTheme || (systemDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+    })();
+    </script>
+    <script>window.__APP_CHECK_SITE_KEY = window.__APP_CHECK_SITE_KEY || "";</script>
+</head>
+<body class="panel-page">
+    <div id="loading-screen"><div class="spinner"></div><h2 style="margin-top:20px;">Oturum Baslatiliyor...</h2></div>
+
+    <div class="top-bar">
+        <h2>Staj Portal</h2>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button type="button" data-theme-toggle onclick="toggleTheme()" class="theme-toggle-btn">Koyu Mod</button>
+            <button type="button" onclick="window.location.href='toplantilar.html'" class="btn-back" style="width:auto;">Toplantilar</button>
+            <button type="button" onclick="toggleProfileTab()" class="btn-back" style="width:auto;">Profil</button>
+            <span id="user-email" style="color:#cbd5e1;"></span>
+            <button onclick="handleLogout()" class="btn-danger">Cikis Yap</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <aside id="release-notes-card" class="release-notes-card" aria-label="Yeni surum notlari">
+            <div class="release-notes-kicker">Son 3 Surum</div>
+            <div class="release-version-block">
+                <div class="release-notes-head">v2026.04.25</div>
+                <ul>
+                    <li>Not kaydetme backend API ile guvenceye alindi.</li>
+                    <li>Zaman kilidi: 1 sadece bugun, 2 bugun + dun.</li>
+                    <li>Onay/red ve Storage kurallari duzenlendi.</li>
+                </ul>
+            </div>
+            <div class="release-version-block">
+                <div class="release-notes-head">v2026.04.24</div>
+                <ul>
+                    <li>Admin kullanici yonetimi eklendi.</li>
+                    <li>Panel ve gunluk bundle dosyalari sadelestirildi.</li>
+                    <li>Backend Functions altyapisi baslatildi.</li>
+                </ul>
+            </div>
+            <div class="release-version-block">
+                <div class="release-notes-head">v2026.04.23</div>
+                <ul>
+                    <li>Mobil tarayici uyumu iyilestirildi.</li>
+                    <li>Hatirlatici ve bildirim akisi toparlandi.</li>
+                    <li>PDF/ZIP indirme deneyimi duzenlendi.</li>
+                </ul>
+            </div>
+        </aside>
+        <div class="section-box personal-section">
+            <div class="section-header" style="border-bottom-color:#fed7aa;">
+                <h2 style="color:#c2410c;">Kisisel Alanim (Ozel Gunluklerim)</h2>
+                <button onclick="openCreateDiaryModal()" class="btn-warning">+ Kisisel Gunluk Ac</button>
+            </div>
+            <div id="personal-diaries-grid" class="list-grid"></div>
+        </div>
+
+        <div class="section-box hidden" id="document-section">
+            <div class="section-header">
+                <h2 style="color:#8b5cf6;">Resmi Evraklarim</h2>
+                <label for="doc-upload" class="btn-pdf" style="cursor:pointer; padding:8px 15px;">+ Belge Yukle (.pdf)</label>
+                <input type="file" id="doc-upload" accept=".pdf" class="hidden" onchange="handleDocUpload(event)">
+            </div>
+            <div id="doc-list-grid" class="list-grid"></div>
+        </div>
+
+        <div class="section-box hidden" id="student-section">
+            <div class="section-header"><h2 style="color:#1d4ed8;">Atanan Gunluklerim</h2></div>
+            <div id="assigned-diaries-grid" class="list-grid"></div>
+        </div>
+
+        <div class="section-box hidden" id="teacher-section">
+            <div class="section-header">
+                <h2 style="color:#047857;">Siniflarim</h2>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="openQuickIndependentAddModal()" class="btn-main">+ Tekil Ogrenci Ekle</button>
+                    <button onclick="openBulkModal()" class="btn-success">Excel ile Sinif Olustur</button>
+                </div>
+            </div>
+            <div id="folders-view"><div id="folder-grid" class="folder-grid"></div></div>
+            <div id="students-view" class="hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:16px; flex-wrap:wrap;">
+                    <div><button onclick="goBackToFolders()" class="btn-link">Geri</button><span id="view-title" style="margin-left:15px; font-weight:bold; font-size:1.2rem;"></span></div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button id="add-student-btn" class="btn-success">+ Ogrenci Ekle</button>
+                        <button id="class-notify-btn" class="btn-main">Genel Bildirim</button>
+                        <button id="class-meeting-btn" class="btn-main" style="background:#0ea5e9;">Toplanti Ekle</button>
+                        <div class="split-action">
+                            <button id="class-pdf-btn" class="btn-pdf">ZIP Indir</button>
+                            <div id="class-pdf-menu" class="action-menu hidden">
+                                <button type="button" id="class-pdf-daily-btn">Gunluk ZIP</button>
+                                <button type="button" id="class-pdf-weekly-btn">Haftalik ZIP</button>
+                            </div>
+                        </div>
+                        <button id="class-settings-btn" class="btn-warning">Sinif Ayarlari</button>
+                        <button id="delete-class-btn" class="btn-danger">Sinifi Sil</button>
+                    </div>
+                </div>
+                <div id="class-insights" class="hidden" style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; margin-bottom:16px;">
+                    <div id="class-summary-card" style="border:1px solid var(--border); border-radius:10px; padding:12px; background:var(--bg);"></div>
+                    <div id="class-suspicious-card" style="border:1px solid var(--border); border-radius:10px; padding:12px; background:var(--bg); max-height:210px; overflow:auto;"></div>
+                    <div id="class-plan-card" style="border:1px solid var(--border); border-radius:10px; padding:12px; background:var(--bg); max-height:210px; overflow:auto;"></div>
+                </div>
+                <div id="student-list-note" class="muted-text" style="margin:0 0 10px 0;"></div>
+                <div id="student-list" class="list-grid" style="margin-bottom:16px;"></div>
+                <div id="class-messages-card" style="border:1px solid var(--border); border-radius:10px; padding:12px; background:var(--bg); margin-bottom:16px;">
+                    <h4 style="margin:0 0 10px 0;">Sinif Mesaj Merkezi</h4>
+                    <div id="class-messages-list" class="muted-text" style="font-size:0.9rem;">Mesajlari kontrol etmek icin Mesaj Merkezi kullanilabilir.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box hidden" id="user-admin-section">
+            <div class="section-header">
+                <div>
+                    <h2 style="color:#0f766e; margin-bottom:4px;">Kullanici Yonetimi</h2>
+                    <p class="muted-text" style="margin:0;">Kayitli kullanicilari gorup ogrenci/hoca/admin rolunu yalnizca admin hesabiyla degistirebilirsiniz.</p>
+                </div>
+                <button type="button" onclick="refreshUserAdminPanel()" class="btn-main" style="width:auto;">Yenile</button>
+            </div>
+            <div id="user-admin-summary" class="muted-text" style="margin-bottom:12px;"></div>
+            <div id="user-admin-list" class="list-grid"></div>
+        </div>
+    </div>
+
+
+    <div id="profile-modal" class="modal hidden">
+        <div class="modal-content profile-modal-content">
+            <h3 style="margin-top:0; color:#0f766e;">Profilim</h3>
+            <p class="muted-text" style="margin-top:0;">Ad soyad ve rol bilgilerinizi buradan kontrol edebilirsiniz.</p>
+            <label class="muted-text">Ad Soyad</label>
+            <input type="text" id="profile-full-name" class="input-field" placeholder="Ad soyad">
+            <label class="muted-text">Hesap</label>
+            <div id="profile-email-role" class="student-card" style="cursor:default; padding:12px; min-height:44px; margin-bottom:14px;"></div>
+            <button type="button" onclick="saveProfileInfo()" class="btn-main" style="width:100%;">Profili Kaydet</button>
+            <button type="button" onclick="closeProfileTab()" class="btn-link" style="width:100%; margin-top:10px;">Kapat</button>
+        </div>
+    </div>
+    <div id="create-diary-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>+ Kisisel Gunluk Ac</h3>
+            <input type="text" id="new-diary-title" class="input-field" placeholder="Gunluk Basligi">
+            <div style="display:flex; gap:10px;">
+                <button onclick="handleCreateDiary()" class="btn-warning" style="flex:1;">Olustur</button>
+                <button onclick="closeCreateDiaryModal()" class="btn-link" style="flex:1;">Iptal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="diary-settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Gunluk Ayarlari</h3>
+            <input type="text" id="edit-diary-title" class="input-field">
+            <button onclick="handleUpdateDiaryTitle()" class="btn-warning" style="width:100%;">Kaydet</button>
+            <button onclick="closeDiarySettingsModal()" class="btn-link" style="width:100%; margin-top:10px;">Iptal</button>
+        </div>
+    </div>
+
+    <div id="class-settings-modal" class="modal hidden">
+        <div class="modal-content panel-settings-modal">
+            <h3 style="margin-top:0;">Sinif Ayarlari</h3>
+            <p id="class-settings-name" style="margin-top:0; color:var(--muted);"></p>
+            <div class="panel-setting-box">
+                <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Zaman Kilidi Etkin</span><input type="checkbox" id="bulk-edit-is-locked" style="width:auto; margin:0;"></label>
+                <input type="number" id="bulk-edit-lock-days" class="input-field" placeholder="1: sadece bugun, 2: dun de acik">
+            </div>
+            <div class="panel-setting-box">
+                <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Mesai Fotograf + Konum Dogrulama</span><input type="checkbox" id="bulk-edit-require-shift-proof" style="width:auto; margin:0;"></label>
+                <p style="margin:8px 0 0 0; color:var(--muted); font-size:0.9rem;">Acik oldugunda sabah/aksam yoklama kaniti (fotograf + konum) zorunlu olur.</p>
+            </div>
+            <div class="panel-setting-box">
+                <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Yoklama Plani Etkin</span><input type="checkbox" id="bulk-edit-attendance-policy-enabled" style="width:auto; margin:0;"></label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <input type="date" id="bulk-edit-attendance-start-date" class="input-field" placeholder="Staj Baslangic">
+                    <input type="date" id="bulk-edit-attendance-end-date" class="input-field" placeholder="Staj Bitis">
+                </div>
+                <input type="number" id="bulk-edit-attendance-days-per-week" class="input-field" min="1" max="7" placeholder="7 Gunde Hedef Gun (1-7)">
+                <label style="display:flex; align-items:center; gap:8px; margin-top:8px;"><input type="checkbox" id="bulk-edit-include-weekends" style="width:auto; margin:0;"><span>Hafta sonlari yoklamaya dahil et</span></label>
+                <div style="display:none;">
+                    <input type="checkbox" id="bulk-edit-weekday-0"><input type="checkbox" id="bulk-edit-weekday-1"><input type="checkbox" id="bulk-edit-weekday-2"><input type="checkbox" id="bulk-edit-weekday-3"><input type="checkbox" id="bulk-edit-weekday-4"><input type="checkbox" id="bulk-edit-weekday-5"><input type="checkbox" id="bulk-edit-weekday-6">
+                </div>
+                <p class="muted-text" style="margin:8px 0 0 0; font-size:0.9rem;">Bu modda gun secimi otomatik. 7 gun icinde hedef sayi kadar yoklama yeterlidir.</p>
+                <div id="bulk-edit-attendance-summary" class="muted-text" style="margin-top:10px; font-size:0.9rem;"></div>
+                <div style="display:flex; gap:8px; margin-top:10px;"><input type="date" id="bulk-edit-holiday-date" class="input-field" style="margin:0;"><button type="button" class="btn-warning" onclick="addHolidayDate('edit')">Tatil Ekle</button></div>
+                <div id="bulk-edit-holiday-list" class="holiday-list"></div>
+            </div>
+            <button onclick="handleUpdateClassSettings()" class="btn-main" style="width:100%; margin-top:12px;">Kaydet</button>
+            <button onclick="closeClassSettingsModal()" class="btn-link" style="width:100%; margin-top:10px;">Iptal</button>
+        </div>
+    </div>
+
+    <div id="bulk-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Excel ile Sinif Olustur</h3>
+            <input type="text" id="bulk-class-name" class="input-field" placeholder="Sinif Ismi">
+            <input type="number" id="bulk-lock-days" class="input-field" placeholder="1: sadece bugun, 2: dun de acik">
+            <div class="panel-setting-box">
+                <label style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span>Yoklama Plani Etkin</span><input type="checkbox" id="bulk-attendance-policy-enabled" style="width:auto; margin:0;"></label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"><input type="date" id="bulk-attendance-start-date" class="input-field" placeholder="Staj Baslangic"><input type="date" id="bulk-attendance-end-date" class="input-field" placeholder="Staj Bitis"></div>
+                <input type="number" id="bulk-attendance-days-per-week" class="input-field" min="1" max="7" placeholder="7 Gunde Hedef Gun (1-7)">
+                <label style="display:flex; align-items:center; gap:8px; margin-top:8px;"><input type="checkbox" id="bulk-include-weekends" style="width:auto; margin:0;"><span>Hafta sonlari dahil</span></label>
+                <div style="display:none;"><input type="checkbox" id="bulk-weekday-0"><input type="checkbox" id="bulk-weekday-1"><input type="checkbox" id="bulk-weekday-2"><input type="checkbox" id="bulk-weekday-3"><input type="checkbox" id="bulk-weekday-4"><input type="checkbox" id="bulk-weekday-5"><input type="checkbox" id="bulk-weekday-6"></div>
+                <p class="muted-text" style="margin:8px 0 0 0; font-size:0.9rem;">Bu modda gun secimi otomatik. 7 gun icinde hedef sayi kadar yoklama yeterlidir.</p>
+                <div id="bulk-attendance-summary" class="muted-text" style="margin-top:10px; font-size:0.9rem;"></div>
+                <div style="display:flex; gap:8px; margin-top:10px;"><input type="date" id="bulk-holiday-date" class="input-field" style="margin:0;"><button type="button" class="btn-warning" onclick="addHolidayDate('bulk')">Tatil Ekle</button></div>
+                <div id="bulk-holiday-list" class="holiday-list"></div>
+            </div>
+            <input type="file" id="excel-file" accept=".xlsx, .xls" class="input-field">
+            <button id="bulk-submit-btn" onclick="handleBulkUpload()" class="btn-success" style="width:100%;">Yukle</button>
+            <button onclick="closeBulkModal()" class="btn-link" style="width:100%; margin-top:10px;">Iptal</button>
+        </div>
+    </div>
+
+    <div id="add-student-modal" class="modal hidden"><div class="modal-content"><h3>+ Ogrenci Ekle</h3><p id="add-student-class-name"></p><input type="email" id="new-student-email" class="input-field" placeholder="E-posta"><input type="text" id="new-student-title" class="input-field" placeholder="Dosya Ismi (No_Isim_Soyisim)"><button onclick="handleAddStudent()" class="btn-success" style="width:100%;">Ekle</button><button onclick="closeAddStudentModal()" class="btn-link" style="width:100%; margin-top:10px;">Iptal</button></div></div>
+
+    <button id="panel-chat-launcher" class="btn-main hidden" style="position:fixed; right:16px; bottom:16px; z-index:2290; width:auto; padding:10px 12px;" onclick="openPanelChatWidget()">Mesaj Merkezi</button>
+    <div id="panel-chat-widget" class="panel-chat-widget hidden">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px;"><div><div id="panel-chat-class" style="font-size:0.75rem; color:var(--muted); font-weight:700;">Sinif</div><div style="display:flex; align-items:center; gap:8px; margin-top:2px;"><strong id="panel-chat-student" style="font-size:0.9rem;">Ogrenci</strong><a id="panel-chat-diary-link" class="btn-main" style="width:auto; padding:4px 8px; font-size:0.75rem;" href="#" target="_blank" rel="noopener">Gunluge Git</a></div></div><button onclick="minimizePanelChatWidget()" class="btn-link" style="padding:4px 8px;">_</button></div>
+        <select id="panel-chat-student-select" class="input-field" style="margin:0 0 8px 0;" onchange="handlePanelChatStudentChange()"></select>
+        <div id="panel-chat-feed" style="max-height:280px; overflow:auto; border:1px solid var(--border); border-radius:10px; padding:10px; background:var(--hover);"></div>
+        <div style="display:flex; gap:8px; margin-top:10px;"><input id="panel-chat-input" class="input-field" style="margin:0;" placeholder="Ogrenciye yanit yaz..." maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();sendPanelChatMessage();}"><button id="panel-chat-send-btn" class="btn-main" style="width:auto;" onclick="sendPanelChatMessage()">Gonder</button></div>
+    </div>
+
+
+    <div id="class-meeting-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Sinifa Toplanti Ekle</h3>
+            <p id="class-meeting-name" class="muted-text"></p>
+            <input type="text" id="class-meeting-title" class="input-field" placeholder="Toplanti basligi">
+            <input type="datetime-local" id="class-meeting-start" class="input-field">
+            <input type="url" id="class-meeting-url" class="input-field" placeholder="Meet / Zoom / Teams linki (opsiyonel, sonra eklenebilir)">
+            <textarea id="class-meeting-description" placeholder="Aciklama (opsiyonel)" style="min-height:100px;"></textarea>
+            <button id="class-meeting-save-btn" onclick="handleCreateClassMeeting()" class="btn-main" style="width:100%; margin-top:10px;">Toplantiyi Olustur</button>
+            <button onclick="closeClassMeetingModal()" class="btn-link" style="width:100%; margin-top:10px;">Iptal</button>
+        </div>
+    </div>
+    <div id="class-notify-modal" class="modal hidden"><div class="modal-content"><h3>Sinifa Genel Bildirim</h3><p id="class-notify-name" class="muted-text" style="margin-top:0;"></p><input type="text" id="class-notify-title" class="input-field" placeholder="Baslik (Opsiyonel)"><textarea id="class-notify-message" class="input-field" style="min-height:130px; resize:vertical;" placeholder="Ogrencilere iletilecek mesaj..."></textarea><button id="class-notify-send-btn" onclick="handleSendClassNotification()" class="btn-main" style="width:100%;">Bildirimi Gonder</button><button onclick="closeClassNotifyModal()" class="btn-link" style="width:100%; margin-top:10px;">Iptal</button></div></div>
+    <div id="view-docs-modal" class="modal hidden"><div class="modal-content"><h3 id="view-docs-title">Evraklar</h3><div id="view-docs-list"></div><button onclick="document.getElementById('view-docs-modal').classList.add('hidden')" class="btn-main" style="width:100%; margin-top:15px;">Kapat</button></div></div>
+
+    <script type="module" src="dist/panel.bundle.js?v=20260430meetinglink1"></script>
+</body>
+</html>
+
+
+
+
+
+
+

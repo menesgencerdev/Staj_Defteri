@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staj Portal - Giris</title>
+    <link rel="stylesheet" href="style.css?v=20260425mobile1">
+    <style>
+        #login-boot-loading {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+    </style>
+    <script>
+    (() => {
+        const savedTheme = localStorage.getItem("theme");
+        const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = savedTheme || (systemDark ? "dark" : "light");
+        document.documentElement.setAttribute("data-theme", theme);
+    })();
+    </script>
+    <script>
+window.__APP_CHECK_SITE_KEY = window.__APP_CHECK_SITE_KEY || "";
+</script>
+</head>
+<body class="auth-page">
+    <div id="login-boot-loading">Oturum kontrol ediliyor...</div>
+    <div id="login-view" class="auth-card" style="display:none;">
+        <h2 style="text-align: center; color: var(--primary);">Giris Yap</h2>
+        <input type="email" id="login-email" placeholder="E-posta Adresiniz">
+        <input type="password" id="login-password" placeholder="Sifreniz">
+
+        <label style="display:flex; align-items:center; gap:8px; margin:10px 0 6px 0; font-size:0.92rem; color:var(--text);">
+            <input type="checkbox" id="remember-me" checked style="width:auto; margin:0;">
+            <span>Beni hatirla</span>
+        </label>
+
+        <div style="text-align:right; margin-bottom:10px;">
+            <button onclick="handleForgotPassword()" type="button" style="background:none; border:none; color:var(--primary); cursor:pointer; padding:0; font-size:0.9rem;">
+                Sifremi unuttum
+            </button>
+        </div>
+
+        <button onclick="handleLogin()" class="btn-main">Sisteme Gir</button>
+        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+            Hesabin yok mu? <a href="register.html" style="color: var(--success); font-weight: bold; text-decoration: none;">Kayit Ol</a>
+        </p>
+    </div>
+
+    <script type="module" src="dist/auth.bundle.js?v=20260425bundle1"></script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staj Portal - Gunluk ve Degerlendirme</title>
+    <link rel="stylesheet" href="style.css?v=20260425mobile1">
+    <script>
+        (() => {
+            const theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <script>
+window.__APP_CHECK_SITE_KEY = window.__APP_CHECK_SITE_KEY || "";
+</script>
+</head>
+<body class="diary-page">
+    <div id="page-loading-overlay" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:var(--bg, #0f172a); color:var(--text, #f8fafc);">
+        <div style="text-align:center;">
+            <div style="width:42px; height:42px; border:4px solid #334155; border-top-color:#3b82f6; border-radius:50%; margin:0 auto 12px auto; animation:spinLoad 1s linear infinite;"></div>
+            <div style="font-weight:600;">Gunluk hazirlaniyor...</div>
+        </div>
+    </div>
+    <style>
+        @keyframes spinLoad { to { transform: rotate(360deg); } }
+    </style>
+
+    <div id="toast-container"></div>
+
+    <div class="user-bar">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button onclick="window.location.href='panel.html'" class="btn-back">Geri</button>
+            <span id="diary-title-label" style="font-weight:bold;">Yukleniyor...</span>
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button type="button" class="theme-toggle-btn" data-theme-toggle onclick="toggleTheme()">Koyu Tema</button>
+            <button type="button" class="btn-back" onclick="window.location.href='toplantilar.html'" title="Toplantilar">Toplantilar</button>
+            <button id="settings-btn" class="hidden" onclick="openSettingsModal()" title="Ayarlar">Ayarlar</button>
+            <button id="reminder-btn" class="hidden btn-back" onclick="openReminderModal()" title="Hatirlatici">Hatirlatici</button>
+            <button id="deleted-photos-btn" class="hidden btn-back" onclick="openDeletedPhotosModal()" title="Silinen fotograflar">Silinen Fotograflar</button>
+
+            <div class="noti-container" onclick="toggleNotiPanel(event)">
+                <span class="noti-bell">!</span>
+                <div id="noti-dot" class="noti-dot hidden"></div>
+                <div id="noti-dropdown" class="noti-dropdown">
+                    <h4>Bildirim Gecmisi</h4>
+                    <div id="noti-list"></div>
+                </div>
+            </div>
+
+            <button id="student-send-btn" class="hidden" onclick="handleSendToApproval()">Onaya Gonder</button>
+            <button id="instructor-approve-btn" class="hidden" onclick="handleApproveDiary()">Onayla</button>
+            <button id="instructor-reject-btn" class="hidden" onclick="openRejectModal()">Reddet</button>
+            <div class="split-action">
+                <button type="button" onclick="togglePdfMenu(event)" class="btn-success">PDF Al</button>
+                <div id="pdf-menu" class="action-menu hidden">
+                    <button type="button" onclick="generatePDF()">Gunluk PDF</button>
+                    <button type="button" onclick="generateWeeklyStudentNotesPDF()">Haftalik PDF</button>
+                </div>
+            </div>
+            <button onclick="handleLogout()" class="btn-back">Cikis Yap</button>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <div id="temp-unlock-bar" class="hidden lock-box" style="background:#fff7ed; color:#9a3412; text-align:center;">
+            Hoca gecici izin tanimladi. Eksik gunlerini doldurabilirsin.
+        </div>
+
+
+        <div id="meetings-container" class="section-card hidden">
+            <h3 style="color:var(--primary); margin-top:0;">Toplantilar</h3>
+            <div id="meetings-list" class="muted-text">Toplanti yukleniyor...</div>
+        </div>
+        <div id="monthly-suggestion-container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h4 id="suggestion-title">Hoca Degerlendirmesi</h4>
+                <div id="approval-badge"></div>
+            </div>
+            <p id="suggestion-text">Henuz bir degerlendirme yapilmadi.</p>
+            <button id="add-suggestion-btn" class="hidden btn-main" onclick="openSuggestionModal()">Degerlendirme Yaz / Guncelle</button>
+        </div>
+
+        <div id="official-docs-container" class="section-card">
+            <h3 style="color:var(--primary);">Resmi Evraklar</h3>
+            <p class="muted-text">SGK belgesi, kabul formu vb. dosyalari buraya yukleyebilirsiniz.</p>
+
+            <div id="official-doc-upload-box" class="list-grid" style="grid-template-columns: 1fr 1fr auto; gap:10px; margin-top:15px;">
+                <select id="official-doc-type">
+                    <option value="SGK Giris Belgesi">SGK Giris Belgesi</option>
+                    <option value="Staj Kabul Formu">Staj Kabul Formu</option>
+                    <option value="Imzali Evrak">Imzali Evrak</option>
+                    <option value="Diger">Diger</option>
+                </select>
+                <input type="file" id="official-doc-file" accept=".pdf,image/*">
+                <button id="upload-official-doc-btn" onclick="handleUploadOfficialDoc()" class="btn-main">Yukle</button>
+            </div>
+
+            <p id="official-doc-lock-text" class="hidden danger-text">Gunluk onaylandigi icin islem kapatildi.</p>
+            <div id="official-docs-list" style="margin-top:20px;"></div>
+        </div>
+
+        <div class="calendar-container">
+            <header class="calendar-header">
+                <h2 id="month-year" style="color:var(--primary); margin:0;"></h2>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="changeMonth(-1)" class="btn-back"><</button>
+                    <button onclick="changeMonth(1)" class="btn-back">></button>
+                </div>
+            </header>
+            <div class="weekdays"><div>Pzt</div><div>Sal</div><div>Car</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div></div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+        </div>
+    </div>
+
+    <div id="log-modal" class="modal hidden">
+        <div class="modal-content log-modal-content">
+            <h3 id="modal-date-label">Tarih</h3>
+            <div id="image-preview-container" style="margin:10px 0;">
+                <div id="log-image-preview-list" style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;"></div>
+            </div>
+            <textarea id="log-input" placeholder="Bugun neler yaptin?"></textarea>
+            <div id="upload-section" style="display:flex; align-items:center; gap:10px; margin:15px 0;">
+                <label for="image-input" class="btn-back" style="cursor:pointer;">Fotograf Ekle (Max 3)</label>
+                <input type="file" id="image-input" accept="image/*" multiple class="hidden" onchange="previewImage(event)">
+                <span id="file-name" class="muted-text"></span>
+            </div>
+            <div id="log-revisions-box" class="hidden" style="margin:12px 0; padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--hover);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <button id="log-revisions-toggle" type="button" onclick="toggleLogRevisions()" class="btn-link" style="padding:0; font-weight:700; color:var(--primary);">Revizyon Gecmisi (Goster)</button>
+                    <span id="log-revisions-count" class="muted-text" style="font-size:0.8rem;"></span>
+                </div>
+                <div id="log-revisions-list" class="hidden"></div>
+            </div>
+            <div id="shift-proof-box" class="shift-proof-box">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <h4 style="margin:0; color:var(--primary);">Mesai Kaydi</h4>
+                    <span id="shift-proof-badge" class="shift-proof-badge">Opsiyonel</span>
+                </div>
+                <p id="shift-proof-hint" class="muted-text" style="margin:8px 0 12px 0;"></p>
+
+                <div class="shift-proof-grid">
+                    <div class="shift-proof-card">
+                        <strong>Sabah Ise Giris</strong>
+                        <img id="morning-photo-preview" class="shift-photo-preview hidden" alt="Sabah fotograf">
+                        <div id="morning-photo-empty" class="muted-text">Fotograf yok</div>
+                        <div id="morning-cooldown-text" class="shift-cooldown-text muted-text"></div>
+                        <div id="morning-meta-warning" class="shift-meta-warning hidden"></div>
+                        <div class="shift-proof-actions">
+                            <label for="morning-photo-input" class="btn-back" style="cursor:pointer;">Fotograf Ekle</label>
+                            <input id="morning-photo-input" type="file" accept="image/*" class="hidden" onchange="previewShiftPhoto(event, 'morning')">
+                        </div>
+                        <div id="morning-location-text" class="shift-location-text muted-text">Konum yok</div>
+                    </div>
+                    <div class="shift-proof-card">
+                        <strong>Aksam Isten Cikis</strong>
+                        <img id="evening-photo-preview" class="shift-photo-preview hidden" alt="Aksam fotograf">
+                        <div id="evening-photo-empty" class="muted-text">Fotograf yok</div>
+                        <div id="evening-cooldown-text" class="shift-cooldown-text muted-text"></div>
+                        <div id="evening-meta-warning" class="shift-meta-warning hidden"></div>
+                        <div class="shift-proof-actions">
+                            <label for="evening-photo-input" class="btn-back" style="cursor:pointer;">Fotograf Ekle</label>
+                            <input id="evening-photo-input" type="file" accept="image/*" class="hidden" onchange="previewShiftPhoto(event, 'evening')">
+                        </div>
+                        <div id="evening-location-text" class="shift-location-text muted-text">Konum yok</div>
+                    </div>
+                </div>
+            </div>
+            <div class="log-modal-actions">
+                <button id="save-btn" onclick="handleSaveLog()" class="btn-main">Kaydet</button>
+                <p id="lock-warning-text" class="hidden danger-text" style="text-align:center;"></p>
+                <button onclick="closeLogModal()" class="btn-link">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="weekly-modal" class="modal hidden">
+        <div class="modal-content log-modal-content">
+            <h3 id="weekly-title">Haftalik Notlar</h3>
+            <p id="weekly-range" class="muted-text"></p>
+            <textarea id="weekly-input" placeholder="Bu hafta genel olarak neler yaptin?"></textarea>
+            <div id="weekly-upload-section" style="display:flex; align-items:center; gap:10px; margin:15px 0; flex-wrap:wrap;">
+                <label for="weekly-image-input" class="btn-back" style="cursor:pointer;">Fotograf Ekle (Max 5)</label>
+                <input type="file" id="weekly-image-input" accept="image/*" multiple class="hidden" onchange="previewWeeklyImages(event)">
+                <span id="weekly-file-name" class="muted-text"></span>
+            </div>
+            <div id="weekly-image-preview-list" style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:12px;"></div>
+            <p id="weekly-lock-warning" class="hidden danger-text" style="text-align:center;"></p>
+            <div class="log-modal-actions">
+                <button id="weekly-save-btn" onclick="handleSaveWeeklyLog()" class="btn-main">Haftalik Kaydet</button>
+                <button onclick="closeWeeklyModal()" class="btn-link">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="suggestion-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Aylik Degerlendirme (Hoca)</h3>
+            <textarea id="suggestion-input" placeholder="Performans notu birakin..."></textarea>
+            <button onclick="handleSaveSuggestion()" class="btn-main">Kaydet</button>
+            <button onclick="closeSuggestionModal()" class="btn-link">Kapat</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Ayarlar</h3>
+            <div id="settings-admin-lock-box" class="lock-box">
+                <label>Zaman Kilidi Etkin</label>
+                <input type="checkbox" id="edit-is-locked" style="width:auto;">
+                <input type="number" id="edit-lock-days" placeholder="1: sadece bugun, 2: dun de acik" style="margin-top:10px;">
+            </div>
+            <div id="settings-admin-shift-box" class="lock-box" style="margin-top:12px;">
+                <label>Mesai Fotograf + Konum Dogrulama</label>
+                <input type="checkbox" id="edit-require-shift-proof" style="width:auto;">
+                <p class="muted-text" style="margin:8px 0 0 0;">Aciksa kaydetmeden once sabah/aksam fotograf ve konum zorunludur.</p>
+            </div>
+            <div id="settings-admin-temp-box" style="margin:15px 0; padding:15px; background:var(--hover); border-radius:8px;">
+                <label>Gecici Izin (Bypass)</label>
+                <select id="temp-unlock-type" onchange="toggleTempInputs()">
+                    <option value="all">Tumu</option>
+                    <option value="range">X Gun</option>
+                    <option value="date">Tarih</option>
+                </select>
+                <div id="temp-range-input" class="hidden"><input type="number" id="temp-value-range" placeholder="Gun"></div>
+                <div id="temp-date-input" class="hidden"><input type="date" id="temp-value-date"></div>
+                <div style="margin-top:10px;">
+                    <input type="number" id="temp-unlock-min" value="5" style="width:60px;"> dk boyunca acik kalsin.
+                </div>
+                <button onclick="handleTempUnlock()" class="btn-warning" style="width:100%; margin-top:10px;">Izni Tanimla</button>
+                <button type="button" onclick="handleTodayShiftBypass()" class="btn-main" style="width:100%; margin-top:10px;">Bugunun Mesai Konumunu Ac</button>
+                <p class="muted-text" style="margin:8px 0 0 0;">Sadece bugun icin sabah/aksam saat ve tekrar cekim engelini kisa sureli kaldirir.</p>
+            </div>
+            <div id="settings-student-work-box" class="lock-box hidden" style="margin-top:12px;">
+                <label>Is Yeri Konumu</label>
+                <p id="work-location-status-text" class="muted-text" style="margin:8px 0 10px 0;">Henuz kayitli is yeri konumu yok.</p>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="number" id="work-radius-meters" min="30" max="2000" step="10" placeholder="Yaricap (m)" style="width:160px;">
+                    <button type="button" onclick="captureWorkplaceLocation()" class="btn-main" style="width:auto;">Konumu Kaydet</button>
+                </div>
+                <p class="muted-text" style="margin:8px 0 0 0;">Yoklamada bu yaricap icindeysen sabah/aksam icin ek puan alirsin.</p>
+            </div>
+            <button id="settings-save-btn" onclick="handleUpdateSettings()" class="btn-main">Kaydet</button>
+            <button onclick="closeSettingsModal()" class="btn-link">Iptal</button>
+        </div>
+    </div>
+
+    <div id="reject-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Red Sebebi</h3>
+            <textarea id="reject-reason-input" placeholder="Ogrenciye duzeltmesi gereken kisimlari yazin..."></textarea>
+            <button onclick="submitRejection()" class="btn-danger" style="width:100%;">Reddet</button>
+            <button onclick="closeRejectModal()" class="btn-link">Vazgec</button>
+        </div>
+    </div>
+
+    <div id="deleted-photos-modal" class="modal hidden">
+        <div class="modal-content" style="max-width:760px;">
+            <h3>Silinen Fotograflar</h3>
+            <p class="muted-text" style="margin-top:0;">Bu gunlukte silinen not fotograflari.</p>
+            <div id="deleted-photos-list" style="max-height:55vh; overflow:auto;"></div>
+            <button onclick="closeDeletedPhotosModal()" class="btn-link">Kapat</button>
+        </div>
+    </div>
+
+    <div id="reminder-modal" class="modal hidden">
+        <div class="modal-content" style="max-width:640px;">
+            <h3>Hatirlatici Ekle</h3>
+            <div style="display:grid; grid-template-columns: 170px 1fr auto; gap:8px; margin-bottom:10px;">
+                <input id="reminder-date" type="date">
+                <input id="reminder-text" type="text" placeholder="Orn: Evrak teslimi">
+                <button type="button" class="btn-main" style="width:auto;" onclick="addReminder()">Ekle</button>
+            </div>
+            <label style="display:flex; align-items:center; gap:8px; margin:0 0 10px 0;">
+                <input id="reminder-today-toggle" type="checkbox" style="width:auto;">
+                <span class="muted-text">Her gun hatirlat</span>
+            </label>
+            <div id="reminder-list" style="max-height:50vh; overflow:auto;"></div>
+            <button onclick="closeReminderModal()" class="btn-link">Kapat</button>
+        </div>
+    </div>
+
+    <div id="reminder-alert-modal" class="modal hidden">
+        <div class="modal-content reminder-alert-content" style="position:relative;">
+            <button type="button" class="reminder-alert-close" aria-label="Kapat" onclick="closeReminderAlertModal()">&times;</button>
+            <h3 style="margin-top:0;">Hatirlaticilar</h3>
+            <div id="reminder-alert-list"></div>
+            <label id="reminder-alert-today-row" class="hidden" style="display:flex; align-items:center; gap:8px; margin:0 0 12px 0;">
+                <input id="reminder-alert-today-mute" type="checkbox" style="width:auto;">
+                <span id="reminder-alert-today-label" class="muted-text">Bu bildirimi bir daha gosterme</span>
+            </label>
+        </div>
+    </div>
+
+    <div id="live-chat-widget" class="live-chat-widget hidden">
+        <div class="live-chat-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span id="live-chat-status-dot" class="live-chat-status-dot"></span>
+                <strong id="live-chat-title">Canli Mesaj</strong>
+            </div>
+            <button type="button" id="live-chat-toggle" class="btn-link" style="padding:4px 8px;" onclick="toggleLiveChat()">-</button>
+        </div>
+        <div id="live-chat-status-text" class="muted-text" style="font-size:0.8rem; margin-bottom:8px;">Baglanti kuruluyor...</div>
+        <div id="live-chat-body">
+            <div id="live-chat-messages" class="live-chat-messages"></div>
+            <div class="live-chat-input-row">
+                <input id="live-chat-input" type="text" placeholder="Mesaj yaz..." maxlength="500" onkeydown="if(event.key==='Enter'){event.preventDefault();handleSendLiveMessage();}">
+                <button id="live-chat-send-btn" class="btn-main" style="width:auto; padding:9px 12px;" onclick="handleSendLiveMessage()">Gonder</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="dist/gunluk.bundle.js?v=20260430chatfix1"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

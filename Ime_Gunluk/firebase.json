@@ -1,0 +1,57 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "firestore.rules",
+      "*.rules",
+      "package.json",
+      "package-lock.json",
+      "README.md",
+      "appcheck-config.js",
+      "firebase-config.js",
+      "auth.js",
+      "register.js",
+      "panel.js",
+      "gunluk.js",
+      "toplantilar.js",
+      "toast.js",
+      "theme.js",
+      "attendance-policy.js",
+      "attendance-score.js",
+      "error-center.js",
+      "panel-classname.js",
+      "panel-pdf.js",
+      "gunluk-data-service.js",
+      "gunluk-live-chat.js",
+      "gunluk-pdf.js",
+      "gunluk-reminders.js",
+      "gunluk-utils.js",
+      "scripts/**",
+      "node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "api",
+          "region": "europe-west1"
+        }
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
+
+

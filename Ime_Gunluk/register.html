@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staj Portal - Kayıt Ol</title>
+    <link rel="stylesheet" href="style.css?v=20260425mobile1">
+    <script>
+window.__APP_CHECK_SITE_KEY = window.__APP_CHECK_SITE_KEY || "";
+</script>
+</head>
+<body class="auth-page">
+    <div class="auth-card">
+        <h2 style="text-align: center; color: var(--success);">Yeni Kayıt</h2>
+
+        <select id="reg-role">
+            <option value="student">Öğrenci</option>
+            <option value="instructor">Akademisyen / Hoca</option>
+        </select>
+
+        <input type="text" id="reg-name" placeholder="Ad Soyad">
+        <input type="email" id="reg-email" placeholder="E-posta Adresi">
+        <input type="password" id="reg-password" placeholder="Şifre">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+            <div id="captcha-code" style="flex:1; min-height:43px; padding:10px 12px; border-radius:10px; background:#0f172a; color:#f8fafc; letter-spacing:3px; font-weight:700; text-align:center; user-select:none;">YUKLENIYOR</div>
+            <button type="button" id="refresh-captcha" class="btn-main" style="width:auto; padding:10px 12px; background:#334155;">Yenile</button>
+        </div>
+        <input type="text" id="reg-captcha" placeholder="Captcha kodunu yazın" autocomplete="off">
+
+        <button id="register-btn" onclick="handleRegister()" class="btn-main" style="background: var(--success);">Kaydı Tamamla</button>
+
+        <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+            Zaten hesabın var mı? <a href="index.html" style="color: var(--primary); font-weight: bold; text-decoration: none;">Giriş Yap</a>
+        </p>
+    </div>
+
+    <script type="module" src="dist/register.bundle.js?v=20260425bundle1"></script>
+</body>
+</html>
+
+
+
+

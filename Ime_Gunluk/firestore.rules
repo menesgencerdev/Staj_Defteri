@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myUid() {
+      return request.auth.uid;
+    }
+
+    function myEmail() {
+      return request.auth.token.email != null
+        ? request.auth.token.email.lower()
+        : "";
+    }
+
+    function myUserDoc() {
+      return get(/databases/$(database)/documents/users/$(myUid()));
+    }
+
+    function myRole() {
+      return signedIn() && myUserDoc().data.role != null
+        ? myUserDoc().data.role
+        : "student";
+    }
+
+    function isAdmin() {
+      return signedIn() && myRole() == "admin";
+    }
+
+
+    function canReadDiary() {
+      return signedIn() && (
+        isAdmin() ||
+        resource.data.ownerId == myUid() ||
+        resource.data.studentId == myUid() ||
+        resource.data.creatorId == myUid() ||
+        resource.data.createdBy == myUid() ||
+        resource.data.instructorId == myUid() ||
+        resource.data.studentEmail == myEmail() ||
+        resource.data.instructorEmail == myEmail()
+      );
+    }
+
+
+    function diaryData(diaryId) {
+      return get(/databases/$(database)/documents/diaries/$(diaryId)).data;
+    }
+
+    function canAccessDiaryById(diaryId) {
+      return signedIn() && (
+        isAdmin() ||
+        diaryData(diaryId).ownerId == myUid() ||
+        diaryData(diaryId).studentId == myUid() ||
+        diaryData(diaryId).creatorId == myUid() ||
+        diaryData(diaryId).createdBy == myUid() ||
+        diaryData(diaryId).instructorId == myUid() ||
+        diaryData(diaryId).studentEmail == myEmail() ||
+        diaryData(diaryId).instructorEmail == myEmail()
+      );
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn() && (userId == myUid() || isAdmin());
+      allow list: if false; // Kullanici listesi artik backend Functions uzerinden.
+
+      allow create: if false; // Kullanici profili backend API uzerinden.
+      allow update: if false; // Rol ve profil degisiklikleri backend API uzerinden.
+
+      allow delete: if false;
+    }
+
+    match /registerRateLimits/{hash} {
+      allow read, write: if false; // Public rate-limit yazimi guvenlik icin kapali.
+    }
+
+    match /presence/{userId} {
+      allow read: if signedIn();
+      allow write: if false; // Presence backend API uzerinden yazilir.
+    }
+
+    match /diaries/{diaryId} {
+      allow read: if canReadDiary();
+      allow create: if false; // Gunluk olusturma backend API uzerinden.
+      allow update: if false; // Gunluk ana alanlari backend API uzerinden guncellenir.
+      allow delete: if false; // Gunluk silme backend API uzerinden.
+
+      match /logs/{logId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow write: if false; // Gunluk notlari backend API uzerinden.
+      }
+
+      match /logs/{logId}/revisions/{revisionId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow write: if false; // Revizyonlari backend API olusturur.
+      }
+
+      match /weeklyLogs/{weekId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow write: if false; // Haftalik kayitlar backend API uzerinden.
+      }
+
+      match /deletedPhotos/{photoId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow write: if false; // Silinen fotograf arsivi backend API uzerinden.
+      }
+
+      match /officialDocs/{docId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow write: if false; // Evrak kaydi backend API uzerinden.
+      }
+
+      match /monthlyEvaluations/{evalId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow write: if false; // Hoca degerlendirmesi backend API uzerinden.
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow create, delete: if false; // Bildirim olusturma backend API uzerinden.
+        allow update: if false; // Okundu bilgisi backend API uzerinden.
+      }
+
+      match /chatMessages/{messageId} {
+        allow read: if canAccessDiaryById(diaryId);
+        allow write: if false; // Sohbet yazma/okundu backend API uzerinden.
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

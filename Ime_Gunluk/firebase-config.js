@@ -8,9 +8,9 @@ const firebaseConfig = {
   authDomain: "gunluk-fdff6.firebaseapp.com",
   projectId: "gunluk-fdff6",
   storageBucket: "gunluk-fdff6.firebasestorage.app",
-  messagingSenderId: "895749922668",
-  appId: "1:895749922668:web:d78a1ffbb5437c0d8f1d49",
-  measurementId: "G-DEQPN57ZX2"
+  messagingSenderId: "00000",
+  appId: "00000",
+  measurementId: "00000"
 };
 
 const app = initializeApp(firebaseConfig);
